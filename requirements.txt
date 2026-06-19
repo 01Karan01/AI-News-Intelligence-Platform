@@ -1,0 +1,5 @@
+pandas
+feedparser
+sentence-transformers
+scikit-learn
+ipykernel
