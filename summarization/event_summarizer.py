@@ -14,7 +14,7 @@ print("Model Loaded!")
 # Load clustered dataset
 # ---------------------------
 
-df = pd.read_csv("clustered_news.csv")
+df = pd.read_csv("clustering/clustered_news.csv")
 
 clusters = sorted(df["cluster"].unique())
 

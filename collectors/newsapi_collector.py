@@ -1,7 +1,8 @@
+import os
 import requests
 import pandas as pd
 
-API_KEY = "382b8e0b2be2495ea66b012f02abb6dc"
+API_KEY = os.getenv("API_KEY")
 
 url = (
     f"https://newsapi.org/v2/top-headlines?"
