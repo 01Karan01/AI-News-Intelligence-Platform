@@ -1,6 +1,7 @@
 import feedparser
 import pandas as pd
 from datetime import datetime
+from utils.logger import logger
 
 # -----------------------------
 # RSS Feed Sources
@@ -30,16 +31,20 @@ articles = []
 # -----------------------------
 for source, url in RSS_FEEDS.items():
 
-    print(f"\nCollecting from {source}...")
+    logger.info("Collecting from %s", source)
 
-    feed = feedparser.parse(url)
+    try:
+        feed = feedparser.parse(url)
+    except Exception as e:
+        logger.exception("Failed to parse feed for %s: %s", source, e)
+        continue
 
     # Skip feed if it cannot be parsed
     if feed.bozo:
-        print(f"Could not read {source}")
+        logger.warning("Could not read %s: %s", source, getattr(feed, 'bozo_exception', 'parse error'))
         continue
 
-    print(f"Articles Found: {len(feed.entries)}")
+    logger.info("Articles Found from %s: %d", source, len(feed.entries))
 
     for entry in feed.entries:
 
@@ -71,13 +76,7 @@ df.to_csv("news.csv", index=False)
 # -----------------------------
 # Print Summary
 # -----------------------------
-print("\n===================================")
-print("NEWS COLLECTION COMPLETED")
-print("===================================")
-
-print(f"\nTotal Unique Articles: {len(df)}")
-
-print("\nArticles Per Source:\n")
-print(df["source"].value_counts())
-
-print("\nDataset saved as news.csv")
+logger.info("NEWS COLLECTION COMPLETED")
+logger.info("Total Unique Articles: %d", len(df))
+logger.info("Articles Per Source:\n%s", df["source"].value_counts().to_string())
+logger.info("Dataset saved as news.csv")
