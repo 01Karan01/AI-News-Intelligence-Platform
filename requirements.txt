@@ -3,3 +3,5 @@ feedparser
 sentence-transformers
 scikit-learn
 ipykernel
+streamlit
+

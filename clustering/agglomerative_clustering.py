@@ -6,9 +6,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 # -----------------------------
 # Load data
 # -----------------------------
-df = pd.read_csv("embedded_news.csv")
+df = pd.read_csv("data/embedded_news.csv")
 
-embeddings = np.load("news_embeddings.npy")
+embeddings = np.load("embeddings/news_embeddings.npy")
 
 print("Articles:", len(df))
 print("Embedding Shape:", embeddings.shape)

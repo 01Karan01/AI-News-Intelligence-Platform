@@ -15,7 +15,7 @@ print("Model Loaded!")
 # Load clustered dataset
 # -----------------------
 
-df = pd.read_csv("clustered_news.csv")
+df = pd.read_csv("clustering/clustered_news.csv")
 
 people = []
 organizations = []
@@ -55,7 +55,7 @@ df["people"] = people
 df["organizations"] = organizations
 df["locations"] = locations
 
-df.to_csv("news_with_entities.csv", index=False)
+df.to_csv("data/news_with_entities.csv", index=False)
 
 print("\nDone!")
 print("Saved as news_with_entities.csv")
