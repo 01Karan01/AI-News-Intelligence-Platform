@@ -1,0 +1,3 @@
+2026-06-29 17:14:47,198 | ERROR | API_KEY environment variable not set
+2026-06-29 17:17:08,927 | INFO | Articles found: 33
+2026-06-29 17:17:08,935 | INFO | Saved 33 articles to newsapi_articles.csv

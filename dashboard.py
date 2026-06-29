@@ -17,7 +17,7 @@ st.write("---")
 # ----------------------------
 # Load Dataset
 # ----------------------------
-df = pd.read_csv("clustered_news.csv")
+df = pd.read_csv("clustering/clustered_news.csv")
 
 # ----------------------------
 # Sidebar
