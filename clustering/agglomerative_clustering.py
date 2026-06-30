@@ -3,10 +3,12 @@ import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics.pairwise import cosine_similarity
 
+from utils.csv_utils import read_csv_safely
+
 # -----------------------------
 # Load data
 # -----------------------------
-df = pd.read_csv("data/embedded_news.csv")
+df = read_csv_safely("data/embedded_news.csv")
 
 embeddings = np.load("embeddings/news_embeddings.npy")
 

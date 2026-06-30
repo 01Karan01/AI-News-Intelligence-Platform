@@ -4,4 +4,5 @@ sentence-transformers
 scikit-learn
 ipykernel
 streamlit
+keybert
 

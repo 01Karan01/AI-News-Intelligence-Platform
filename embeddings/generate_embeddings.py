@@ -2,10 +2,12 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer
 import numpy as np
 
+from utils.csv_utils import read_csv_safely
+
 # -----------------------------
 # Load Dataset
 # -----------------------------
-df = pd.read_csv("master_news.csv")
+df = read_csv_safely("master_news.csv")
 
 print(f"Loaded {len(df)} articles")
 

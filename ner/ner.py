@@ -1,6 +1,8 @@
 import pandas as pd
 from transformers import pipeline
 
+from utils.csv_utils import read_csv_safely
+
 print("Loading NER model...")
 
 ner = pipeline(
@@ -15,7 +17,7 @@ print("Model Loaded!")
 # Load clustered dataset
 # -----------------------
 
-df = pd.read_csv("clustering/clustered_news.csv")
+df = read_csv_safely("clustering/clustered_news.csv")
 
 people = []
 organizations = []

@@ -1,7 +1,9 @@
 import pandas as pd
 
-rss = pd.read_csv("news.csv")
-api = pd.read_csv("newsapi_articles.csv")
+from utils.csv_utils import read_csv_safely
+
+rss = read_csv_safely("news.csv")
+api = read_csv_safely("newsapi_articles.csv")
 
 # Rename NewsAPI columns to match RSS
 api = api.rename(columns={
