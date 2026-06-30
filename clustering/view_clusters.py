@@ -1,6 +1,8 @@
 import pandas as pd
 
-df = pd.read_csv("clustered_news.csv")
+from utils.csv_utils import read_csv_safely
+
+df = read_csv_safely("clustered_news.csv")
 
 for cluster in sorted(df["cluster"].unique()):
     print("=" * 70)
