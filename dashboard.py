@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 
+from utils.csv_utils import read_csv_safely
+
 # ----------------------------
 # Page Configuration
 # ----------------------------
@@ -17,8 +19,8 @@ st.write("---")
 # ----------------------------
 # Load Dataset
 # ----------------------------
-df = pd.read_csv("clustering/clustered_news.csv")
-
+df = read_csv_safely("clustering/clustered_news.csv")
+titles_df = pd.read_csv("data/event_titles.csv")
 # ----------------------------
 # Sidebar
 # ----------------------------
@@ -36,7 +38,11 @@ selected_cluster = st.sidebar.selectbox(
 # ----------------------------
 cluster_df = df[df["cluster"] == selected_cluster]
 
-st.header(f"📌 Event Cluster {selected_cluster}")
+event_name = titles_df[
+    titles_df["cluster"] == selected_cluster
+]["keywords"].values[0]
+
+st.header(f"📰 {event_name.title()}")
 
 st.metric("Articles", len(cluster_df))
 
