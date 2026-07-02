@@ -1,6 +1,6 @@
 import pandas as pd
 from transformers import pipeline
-
+from utils.csv_utils import read_csv_safely
 print("Loading summarization model...")
 
 summarizer = pipeline(
