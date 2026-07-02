@@ -1,7 +1,22 @@
 import streamlit as st
 import pandas as pd
-
+from utils import logger
 from utils.csv_utils import read_csv_safely
+
+
+def get_event_name(selected_cluster, titles_df):
+    if titles_df.empty or "cluster" not in titles_df.columns or "keywords" not in titles_df.columns:
+        return f"Cluster {selected_cluster}"
+
+    match = titles_df[
+        titles_df["cluster"].astype(str).str.strip() == str(selected_cluster).strip()
+    ]
+
+    if match.empty:
+        return f"Cluster {selected_cluster}"
+
+    return match["keywords"].iloc[0]
+
 
 # ----------------------------
 # Page Configuration
@@ -21,6 +36,15 @@ st.write("---")
 # ----------------------------
 df = read_csv_safely("clustering/clustered_news.csv")
 titles_df = pd.read_csv("data/event_titles.csv")
+search_query=st.text_input("Search News")
+if search_query:
+
+    matching_clusters = df[
+        df["title"].str.contains(search_query, case=False, na=False) |
+        df["summary"].str.contains(search_query, case=False, na=False)
+    ]["cluster"].unique()
+
+    df = df[df["cluster"].isin(matching_clusters)]
 # ----------------------------
 # Sidebar
 # ----------------------------
@@ -38,9 +62,7 @@ selected_cluster = st.sidebar.selectbox(
 # ----------------------------
 cluster_df = df[df["cluster"] == selected_cluster]
 
-event_name = titles_df[
-    titles_df["cluster"] == selected_cluster
-]["keywords"].values[0]
+event_name = get_event_name(selected_cluster, titles_df)
 
 st.header(f"📰 {event_name.title()}")
 
@@ -57,6 +79,10 @@ for i, row in cluster_df.iterrows():
     st.markdown(f"[Read Full Article]({row['link']})")
     st.write("")
 
+if df.empty:
+    st.warning("No matching news found.")
+    st.stop()
+    
 st.write("---")
 
 # ----------------------------
