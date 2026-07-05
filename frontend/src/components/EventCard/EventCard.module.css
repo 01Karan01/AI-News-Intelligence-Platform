@@ -1,0 +1,70 @@
+.card{
+
+    background:white;
+
+    border-radius:16px;
+
+    padding:25px;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+    box-shadow:0 4px 15px rgba(0,0,0,.05);
+
+    border:1px solid #E2E8F0;
+}
+
+.card:hover{
+
+    transform:translateY(-6px);
+
+    box-shadow:0 15px 35px rgba(0,0,0,.1);
+
+}
+
+.card h2{
+
+    color:#0F172A;
+
+    margin-bottom:15px;
+}
+
+.card p{
+
+    color:#64748B;
+
+    margin-bottom:10px;
+}
+
+.bottom{
+
+    margin-top:25px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+}
+
+.bottom button{
+
+    border:none;
+
+    background:#2563EB;
+
+    color:white;
+
+    padding:10px 16px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+}
+
+.bottom button:hover{
+
+    background:#1D4ED8;
+
+}

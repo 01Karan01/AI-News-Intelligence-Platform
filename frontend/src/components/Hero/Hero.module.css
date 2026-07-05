@@ -1,0 +1,76 @@
+.hero{
+    padding:90px 0 60px;
+    text-align:center;
+}
+
+.badge{
+    display:inline-block;
+    padding:10px 20px;
+    border-radius:50px;
+    background:#DBEAFE;
+    color:#2563EB;
+    font-weight:600;
+    margin-bottom:25px;
+}
+
+.content h1{
+    font-size:3.8rem;
+    color:#0F172A;
+    line-height:1.2;
+    margin-bottom:20px;
+}
+
+.description{
+    max-width:700px;
+    margin:auto;
+    color:#64748B;
+    font-size:1.15rem;
+    line-height:1.8;
+    margin-bottom:40px;
+}
+
+.searchContainer{
+    max-width:700px;
+    margin:auto;
+}
+
+.searchContainer input{
+    width:100%;
+    padding:18px 25px;
+    border-radius:15px;
+    border:1px solid #CBD5E1;
+    font-size:1rem;
+    outline:none;
+}
+
+.searchContainer input:focus{
+    border-color:#2563EB;
+}
+
+.trending{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:30px;
+}
+
+.trending span{
+    font-weight:700;
+}
+
+.trending button{
+    border:none;
+    background:#EFF6FF;
+    color:#2563EB;
+    padding:10px 18px;
+    border-radius:25px;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.trending button:hover{
+    background:#2563EB;
+    color:white;
+}
