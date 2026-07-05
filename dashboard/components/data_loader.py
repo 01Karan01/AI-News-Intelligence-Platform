@@ -1,5 +1,5 @@
 import pandas as pd
-from utils.csv_utils import read_csv_safely
+from backend.utils.csv_utils import read_csv_safely
 
 
 def load_data():

@@ -1,0 +1,31 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    font-family:Inter, Arial, sans-serif;
+    background:#f8fafc;
+    color:#334155;
+}
+
+main{
+    width:90%;
+    max-width:1300px;
+    margin:auto;
+    min-height:90vh;
+    padding:40px 0;
+}
+
+button{
+    font-family:inherit;
+}
+
+img{
+    max-width:100%;
+}
