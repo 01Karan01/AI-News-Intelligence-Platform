@@ -1,0 +1,44 @@
+.state {
+  min-height: 56vh;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  text-align: center;
+  padding: 40px 16px;
+}
+
+.icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #fef2f2;
+  color: var(--red);
+  font-size: 1.8rem;
+}
+
+.state h1 {
+  margin: 18px 0 8px;
+  color: var(--dark);
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+
+.state p {
+  max-width: 560px;
+  margin: 0 0 22px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.state a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 0 14px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 800;
+}
