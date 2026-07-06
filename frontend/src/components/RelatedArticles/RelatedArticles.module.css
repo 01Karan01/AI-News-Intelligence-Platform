@@ -1,0 +1,81 @@
+.card,
+.article {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.card {
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.header,
+.article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header {
+  margin-bottom: 14px;
+}
+
+.header h2 {
+  margin: 0;
+  color: var(--dark);
+}
+
+.header span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.list {
+  display: grid;
+  gap: 12px;
+}
+
+.article {
+  padding: 16px;
+}
+
+.article h3,
+.article p {
+  margin: 0;
+}
+
+.article h3 {
+  color: var(--dark);
+  font-size: 1rem;
+}
+
+.article p {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.article a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  white-space: nowrap;
+  border-radius: 8px;
+  padding: 0 12px;
+  background: #f8fafc;
+  color: var(--primary);
+  font-weight: 800;
+}
+
+@media (max-width: 640px) {
+  .article,
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
