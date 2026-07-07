@@ -15,7 +15,7 @@ function Home() {
   const { statistics } = useEventContext();
   const { todaysEvents, trendingEvents, loading, error } = useEvents();
   const { timeline } = useTimeline();
-  const eventsForToday = todaysEvents.length > 0 ? todaysEvents : trendingEvents;
+  const latestEvents = todaysEvents.length > 0 ? todaysEvents : trendingEvents;
 
   if (error) {
     return <ErrorState title="Dashboard unavailable" message={error} />;
@@ -31,10 +31,10 @@ function Home() {
     >
       <Hero />
       <Statistics statistics={statistics} />
-      {loading && eventsForToday.length === 0 ? (
+      {loading && latestEvents.length === 0 ? (
         <SkeletonGrid count={4} />
       ) : (
-        <TrendingEvents events={eventsForToday} />
+        <TrendingEvents events={latestEvents} />
       )}
       {loading && timeline.length === 0 ? <SkeletonGrid count={3} /> : <Timeline groups={timeline} />}
     </motion.div>

@@ -1,8 +1,12 @@
 pandas
 feedparser
+requests
 sentence-transformers
 scikit-learn
 ipykernel
 streamlit
 keybert
+fastapi
+uvicorn
+transformers
 

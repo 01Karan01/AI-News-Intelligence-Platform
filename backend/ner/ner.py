@@ -1,7 +1,32 @@
+import sys
+from pathlib import Path
+
 import pandas as pd
 from transformers import pipeline
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
+
 from backend.utils.csv_utils import read_csv_safely
+
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+BAD_ENTITIES = {"bbc", "cnn", "npr", "com", "news", "reuters"}
+
+
+def clean_entity(value):
+    cleaned = str(value).replace("##", "").strip(" ,.;:!?()[]{}\"'")
+    if len(cleaned) <= 2:
+        return ""
+    if cleaned.lower() in BAD_ENTITIES:
+        return ""
+    if cleaned[0].islower():
+        return ""
+    if cleaned.islower():
+        return ""
+    return cleaned
+
 
 print("Loading NER model...")
 
@@ -39,15 +64,19 @@ for text in (
     for entity in entities:
 
         label = entity["entity_group"]
+        cleaned = clean_entity(entity["word"])
+
+        if not cleaned:
+            continue
 
         if label == "PER":
-            person.append(entity["word"])
+            person.append(cleaned)
 
         elif label == "ORG":
-            org.append(entity["word"])
+            org.append(cleaned)
 
         elif label == "LOC":
-            loc.append(entity["word"])
+            loc.append(cleaned)
 
     people.append(", ".join(sorted(set(person))))
     organizations.append(", ".join(sorted(set(org))))
@@ -57,7 +86,7 @@ df["people"] = people
 df["organizations"] = organizations
 df["locations"] = locations
 
-df.to_csv("data/news_with_entities.csv", index=False)
+df.to_csv(BASE_DIR / "data" / "news_with_entities.csv", index=False)
 
 print("\nDone!")
 print("Saved as news_with_entities.csv")
