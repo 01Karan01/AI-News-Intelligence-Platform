@@ -4,7 +4,7 @@ export const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8
 
 const API = axios.create({
   baseURL: BASE_URL,
-  timeout: 6000,
+  timeout: 15000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -207,51 +207,21 @@ const withFallback = async (request, fallback) => {
   }
 };
 
-const normalize = (value) => value.toLowerCase().trim();
+const withoutFallback = async (request) => {
+  const response = await request();
+  return response.data;
+};
 
-export const getEvents = () => withFallback(() => API.get("/events"), mockEvents);
+export const getEvents = () => withoutFallback(() => API.get("/events"));
 
 export const getEventById = (id) =>
-  withFallback(
-    () => API.get(`/events/${id}`),
-    mockEvents.find((event) => event.id === id) ?? null,
-  );
+  withoutFallback(() => API.get(`/events/${id}`));
 
 export const searchEvents = (query = "") => {
-  const term = normalize(query);
-  const results = term
-    ? mockEvents.filter((event) =>
-        [
-          event.title,
-          event.summary,
-          event.category,
-          ...event.people,
-          ...event.organizations,
-          ...event.locations,
-        ]
-          .join(" ")
-          .toLowerCase()
-          .includes(term),
-      )
-    : mockEvents;
-
-  return withFallback(() => API.get("/events/search", { params: { q: query } }), results);
+  return withoutFallback(() => API.get("/events/search", { params: { q: query } }));
 };
 
-export const getTimeline = () => {
-  const groups = Array.from({ length: 6 }, (_, daysAgo) => ({
-    daysAgo,
-    label: daysAgo === 0 ? "Today" : daysAgo === 1 ? "Yesterday" : `${daysAgo} Days Ago`,
-    events: mockEvents.filter((event) => {
-      const eventDate = new Date(event.date);
-      const targetDate = new Date(today);
-      targetDate.setDate(today.getDate() - daysAgo);
-      return eventDate.toDateString() === targetDate.toDateString();
-    }),
-  }));
-
-  return withFallback(() => API.get("/timeline"), groups);
-};
+export const getTimeline = () => withoutFallback(() => API.get("/timeline"));
 
 export const getStatistics = () => withFallback(() => API.get("/statistics"), mockStatistics);
 
