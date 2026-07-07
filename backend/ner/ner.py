@@ -1,19 +1,16 @@
 import sys
 from pathlib import Path
-
 import pandas as pd
 from transformers import pipeline
 
+# Add project root to sys.path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
-from backend.utils.csv_utils import read_csv_safely
+from backend.utils.db import get_connection
 
-
-BASE_DIR = Path(__file__).resolve().parents[1]
 BAD_ENTITIES = {"bbc", "cnn", "npr", "com", "news", "reuters"}
-
 
 def clean_entity(value):
     cleaned = str(value).replace("##", "").strip(" ,.;:!?()[]{}\"'")
@@ -21,72 +18,68 @@ def clean_entity(value):
         return ""
     if cleaned.lower() in BAD_ENTITIES:
         return ""
-    if cleaned[0].islower():
-        return ""
-    if cleaned.islower():
+    if cleaned.islower() or cleaned[0].islower():
         return ""
     return cleaned
 
+def main():
+    print("Loading NER model...")
+    ner = pipeline(
+        "ner",
+        model="dslim/bert-base-NER",
+        aggregation_strategy="simple"
+    )
+    print("Model Loaded!")
 
-print("Loading NER model...")
+    print("Loading articles from database...")
+    conn = get_connection()
+    df = pd.read_sql_query("SELECT id, title, summary FROM articles ORDER BY id", conn)
 
-ner = pipeline(
-    "ner",
-    model="dslim/bert-base-NER",
-    aggregation_strategy="simple"
-)
+    if df.empty:
+        print("No articles found in database. Exiting.")
+        conn.close()
+        return
 
-print("Model Loaded!")
+    print(f"Extracting entities for {len(df)} articles...\n")
+    cursor = conn.cursor()
 
-# -----------------------
-# Load clustered dataset
-# -----------------------
+    for idx, row in df.iterrows():
+        text = str(row["title"] or "") + " " + str(row["summary"] or "")
+        entities = ner(text[:512])
 
-df = read_csv_safely("clustering/clustered_news.csv")
+        person = []
+        org = []
+        loc = []
 
-people = []
-organizations = []
-locations = []
+        for entity in entities:
+            label = entity["entity_group"]
+            cleaned = clean_entity(entity["word"])
 
-print("Extracting entities...\n")
+            if not cleaned:
+                continue
 
-for text in (
-    df["title"].fillna("") + " " +
-    df["summary"].fillna("")
-):
+            if label == "PER":
+                person.append(cleaned)
+            elif label == "ORG":
+                org.append(cleaned)
+            elif label == "LOC":
+                loc.append(cleaned)
 
-    entities = ner(text[:512])
+        people_str = ", ".join(sorted(set(person)))
+        org_str = ", ".join(sorted(set(org)))
+        loc_str = ", ".join(sorted(set(loc)))
 
-    person = []
-    org = []
-    loc = []
+        cursor.execute(
+            "UPDATE articles SET people = ?, organizations = ?, locations = ? WHERE id = ?",
+            (people_str, org_str, loc_str, int(row["id"]))
+        )
 
-    for entity in entities:
+        if idx % 10 == 0:
+            print(f"Processed {idx}/{len(df)} articles...")
 
-        label = entity["entity_group"]
-        cleaned = clean_entity(entity["word"])
+    conn.commit()
+    conn.close()
+    print("\nNER extraction and database enrichment completed successfully!")
 
-        if not cleaned:
-            continue
-
-        if label == "PER":
-            person.append(cleaned)
-
-        elif label == "ORG":
-            org.append(cleaned)
-
-        elif label == "LOC":
-            loc.append(cleaned)
-
-    people.append(", ".join(sorted(set(person))))
-    organizations.append(", ".join(sorted(set(org))))
-    locations.append(", ".join(sorted(set(loc))))
-
-df["people"] = people
-df["organizations"] = organizations
-df["locations"] = locations
-
-df.to_csv(BASE_DIR / "data" / "news_with_entities.csv", index=False)
-
-print("\nDone!")
-print("Saved as news_with_entities.csv")
+if __name__ == "__main__":
+    main()

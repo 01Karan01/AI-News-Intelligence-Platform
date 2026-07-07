@@ -9,9 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 BASE_DIR = Path(__file__).resolve().parent
-ENTITY_DATA = BASE_DIR / "data" / "news_with_entities.csv"
-CLUSTER_DATA = BASE_DIR / "clustering" / "clustered_news.csv"
-EVENT_TITLES = BASE_DIR / "data" / "event_titles.csv"
 
 app = FastAPI(title="AI News Intelligence API")
 
@@ -155,12 +152,26 @@ def _event_timeline(cluster_df):
 
 
 def _load_events():
-    news_path = ENTITY_DATA if ENTITY_DATA.exists() else CLUSTER_DATA
-    news_df = _read_csv(news_path)
-    titles_df = _read_csv(EVENT_TITLES) if EVENT_TITLES.exists() else pd.DataFrame()
+    from backend.utils.db import get_connection, DB_PATH
+    if not DB_PATH.exists():
+        return []
 
-    if "cluster" not in news_df.columns:
-        raise HTTPException(status_code=500, detail="News data must include a cluster column")
+    conn = get_connection()
+    try:
+        news_df = pd.read_sql_query(
+            "SELECT * FROM articles WHERE cluster_id IS NOT NULL", conn
+        )
+        news_df = news_df.rename(columns={"cluster_id": "cluster"})
+        titles_df = pd.read_sql_query(
+            "SELECT id as cluster, title, keywords FROM events", conn
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database read failed: {e}")
+    finally:
+        conn.close()
+
+    if news_df.empty:
+        return []
 
     events = []
     for cluster_id, cluster_df in news_df.groupby("cluster"):
@@ -252,18 +263,38 @@ def get_event(event_id: str):
 
 @app.get("/api/statistics")
 def get_statistics():
-    news_path = ENTITY_DATA if ENTITY_DATA.exists() else CLUSTER_DATA
-    news_df = _read_csv(news_path)
+    from backend.utils.db import get_connection, DB_PATH
+    if not DB_PATH.exists():
+        return {
+            "articles": 0,
+            "events": 0,
+            "sources": 0,
+            "countries": 0,
+        }
 
-    locations = Counter()
-    if "locations" in news_df.columns:
-        for value in news_df["locations"].tolist():
-            locations.update(_split_values(value))
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT COUNT(*) as articles, COUNT(DISTINCT cluster_id) as events, COUNT(DISTINCT source) as sources FROM articles")
+        stats_row = cursor.fetchone()
+        articles_count = stats_row["articles"]
+        events_count = stats_row["events"]
+        sources_count = stats_row["sources"]
+
+        cursor.execute("SELECT locations FROM articles WHERE locations IS NOT NULL AND locations != ''")
+        loc_rows = cursor.fetchall()
+        locations = Counter()
+        for row in loc_rows:
+            locations.update(_split_values(row["locations"]))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database statistics query failed: {e}")
+    finally:
+        conn.close()
 
     return {
-        "articles": len(news_df),
-        "events": news_df["cluster"].nunique() if "cluster" in news_df.columns else 0,
-        "sources": news_df["source"].nunique() if "source" in news_df.columns else 0,
+        "articles": articles_count,
+        "events": events_count,
+        "sources": sources_count,
         "countries": len(locations),
     }
 
