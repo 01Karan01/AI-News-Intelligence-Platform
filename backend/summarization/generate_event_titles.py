@@ -1,10 +1,15 @@
+import sys
 from pathlib import Path
-
 import pandas as pd
 from keybert import KeyBERT
 
+# Add project root to sys.path
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
 
-BASE_DIR = Path(__file__).resolve().parents[1]
+from backend.utils.db import get_connection
+
 BAD_TITLE_WORDS = {
     "bbc",
     "cnn",
@@ -18,7 +23,6 @@ BAD_TITLE_WORDS = {
     "and",
 }
 
-
 def clean_title(text):
     words = []
     for raw_word in str(text).replace("-", " ").replace(":", " ").split():
@@ -26,53 +30,63 @@ def clean_title(text):
         if not word or word.lower() in BAD_TITLE_WORDS:
             continue
         words.append(word)
-
     return " ".join(words[:5]).title() or "Untitled Event"
 
+def main():
+    print("Loading KeyBERT model...")
+    kw_model = KeyBERT()
+    print("Model Loaded!\n")
 
-print("Loading KeyBERT model...")
+    print("Loading articles from database...")
+    conn = get_connection()
+    df = pd.read_sql_query("SELECT title, cluster_id FROM articles WHERE cluster_id IS NOT NULL", conn)
 
-kw_model = KeyBERT()
+    if df.empty:
+        print("No clustered articles found in database. Exiting.")
+        conn.close()
+        return
 
-print("Model Loaded!\n")
+    clusters = sorted(df["cluster_id"].unique())
+    event_titles = []
 
-# -----------------------
-# Load clustered news
-# -----------------------
+    for cluster in clusters:
+        cluster_df = df[df["cluster_id"] == cluster]
+        
+        # Combine first few headlines
+        text = " ".join(cluster_df["title"].head(5).tolist())
 
-df = pd.read_csv(BASE_DIR / "clustering" / "clustered_news.csv")
+        keywords = kw_model.extract_keywords(
+            text,
+            keyphrase_ngram_range=(1, 2),
+            stop_words="english",
+            top_n=5
+        )
 
-clusters = sorted(df["cluster"].unique())
+        keyword_list = [k[0] for k in keywords]
+        best_keyword = keyword_list[0] if keyword_list else cluster_df["title"].iloc[0]
 
-event_titles = []
+        event_titles.append({
+            "cluster": int(cluster),
+            "title": clean_title(best_keyword),
+            "keywords": ", ".join(keyword_list)
+        })
 
-for cluster in clusters:
+    # Clear events table and insert new events
+    print("Saving event titles to database...")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM events")
+    
+    for event in event_titles:
+        cursor.execute(
+            "INSERT INTO events (id, title, keywords) VALUES (?, ?, ?)",
+            (event["cluster"], event["title"], event["keywords"])
+        )
+        
+    conn.commit()
+    conn.close()
+    
+    print("Event titles generation completed successfully!")
+    print(pd.DataFrame(event_titles))
 
-    cluster_df = df[df["cluster"] == cluster]
-
-    # Combine first few headlines
-    text = " ".join(cluster_df["title"].head(5).tolist())
-
-    keywords = kw_model.extract_keywords(
-        text,
-        keyphrase_ngram_range=(1, 2),
-        stop_words="english",
-        top_n=5
-    )
-
-    keyword_list = [k[0] for k in keywords]
-    best_keyword = keyword_list[0] if keyword_list else cluster_df["title"].iloc[0]
-
-    event_titles.append({
-        "cluster": cluster,
-        "title": clean_title(best_keyword),
-        "keywords": ", ".join(keyword_list)
-    })
-
-event_df = pd.DataFrame(event_titles)
-
-event_df.to_csv(BASE_DIR / "data" / "event_titles.csv", index=False)
-
-print(event_df)
-
-print("\nSaved as data/event_titles.csv")
+if __name__ == "__main__":
+    main()

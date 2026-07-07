@@ -1,54 +1,70 @@
-import pandas as pd
-import numpy as np
 import sys
 from pathlib import Path
+import sqlite3
+import pandas as pd
+import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics.pairwise import cosine_similarity
 
+# Add project root to sys.path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
-from backend.utils.csv_utils import read_csv_safely
+from backend.utils.db import get_connection
 
+def main():
+    BASE_DIR = Path(__file__).resolve().parent.parent
 
-BASE_DIR = Path(__file__).resolve().parents[1]
+    print("Loading articles from database...")
+    conn = get_connection()
+    # Must order by id to match embeddings ordering
+    df = pd.read_sql_query("SELECT id, title FROM articles ORDER BY id", conn)
+    
+    embeddings_path = BASE_DIR / "embeddings" / "news_embeddings.npy"
+    if not embeddings_path.exists():
+        print(f"Embeddings file not found at {embeddings_path}. Please run generate_embeddings.py first.")
+        conn.close()
+        return
 
-# -----------------------------
-# Load data
-# -----------------------------
-df = read_csv_safely("data/embedded_news.csv")
+    embeddings = np.load(embeddings_path)
 
-embeddings = np.load(BASE_DIR / "embeddings" / "news_embeddings.npy")
+    print("Articles in DB:", len(df))
+    print("Embedding Shape:", embeddings.shape)
 
-print("Articles:", len(df))
-print("Embedding Shape:", embeddings.shape)
+    if len(df) != embeddings.shape[0]:
+        print("ERROR: Dimension mismatch! The number of articles in DB does not match embeddings shape.")
+        conn.close()
+        return
 
-# -----------------------------
-# Cosine similarity matrix
-# -----------------------------
-similarity_matrix = cosine_similarity(embeddings)
+    # Compute cosine similarity matrix
+    print("Computing cosine similarity matrix...")
+    similarity_matrix = cosine_similarity(embeddings)
 
-# -----------------------------
-# Agglomerative Clustering
-# -----------------------------
-clustering = AgglomerativeClustering(
-    n_clusters=30,
-    metric="precomputed",
-    linkage="average"
-)
+    # Perform Agglomerative Clustering
+    print("Running Agglomerative Clustering...")
+    clustering = AgglomerativeClustering(
+        n_clusters=min(30, len(df)),  # Handle cases with fewer than 30 articles
+        metric="precomputed",
+        linkage="average"
+    )
+    labels = clustering.fit_predict(1 - similarity_matrix)
+    df["cluster"] = labels
 
-labels = clustering.fit_predict(1 - similarity_matrix)
+    # Update database with cluster_id
+    print("Updating cluster IDs in database...")
+    cursor = conn.cursor()
+    for _, row in df.iterrows():
+        cursor.execute(
+            "UPDATE articles SET cluster_id = ? WHERE id = ?",
+            (int(row["cluster"]), int(row["id"]))
+        )
+    conn.commit()
+    conn.close()
 
-df["cluster"] = labels
+    print("Clustering completed successfully!")
+    print("\nCluster Counts:")
+    print(df["cluster"].value_counts().sort_index())
 
-# -----------------------------
-# Save results
-# -----------------------------
-df.to_csv(BASE_DIR / "clustering" / "clustered_news.csv", index=False)
-
-print("\nCluster Counts:\n")
-print(df["cluster"].value_counts().sort_index())
-
-print("\nSample Results:\n")
-print(df[["cluster", "title"]].head(30))
+if __name__ == "__main__":
+    main()
