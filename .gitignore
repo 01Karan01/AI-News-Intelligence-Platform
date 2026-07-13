@@ -20,6 +20,17 @@ frontend/structure.txt
 .DS_Store
 Thumbs.db
 
+# ---------- Logs ----------
 *.log
-backend/.venv/
 backend/logs/
+
+# ---------- Generated Data (rebuild via pipeline) ----------
+backend/.venv/
+backend/data/
+backend/news.csv
+backend/newsapi_articles.csv
+backend/embeddings/news_embeddings.npy
+backend/clustering/clustered_news.csv
+
+# ---------- Misc ----------
+papaji.txt

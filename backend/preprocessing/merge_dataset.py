@@ -1,54 +1,93 @@
 import sys
 from pathlib import Path
-import pandas as pd
 from datetime import datetime
 
-# Add project root to sys.path if not present
+import pandas as pd
+
+# Add project root to sys.path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
 from backend.utils.csv_utils import read_csv_safely
 from backend.utils.db import init_db, save_articles_to_db
+from backend.utils.logger import logger
 
-def main():
-    print("Initializing database...")
+
+def main(rss_df=None, api_df=None):
+    """Merge RSS and NewsAPI data into the database.
+
+    Args:
+        rss_df: Optional DataFrame from RSS collector. Falls back to CSV if None.
+        api_df: Optional DataFrame from NewsAPI collector. Falls back to CSV if None.
+    """
+
+    logger.info("Initializing database...")
     init_db()
 
-    print("Loading raw files...")
-    rss = read_csv_safely("news.csv")
-    api = read_csv_safely("newsapi_articles.csv")
+    # Load data — prefer passed-in DataFrames, fall back to CSVs
+    if rss_df is None:
+        logger.info("Loading RSS data from CSV...")
+        rss = read_csv_safely("news.csv")
+    else:
+        rss = rss_df.copy()
+        logger.info("Using %d articles from RSS collector", len(rss))
+
+    if api_df is None:
+        api_csv = Path(__file__).resolve().parent.parent / "newsapi_articles.csv"
+        if api_csv.exists():
+            logger.info("Loading NewsAPI data from CSV...")
+            api = read_csv_safely(str(api_csv))
+        else:
+            logger.info("No NewsAPI CSV found — skipping.")
+            api = pd.DataFrame()
+    else:
+        api = api_df.copy()
+        if not api.empty:
+            logger.info("Using %d articles from NewsAPI collector", len(api))
+        else:
+            logger.info("NewsAPI returned no articles — skipping.")
 
     # Normalize NewsAPI column names
-    api = api.rename(columns={
-        "description": "summary",
-        "url": "link",
-        "publishedAt": "published"
-    })
+    if not api.empty:
+        api = api.rename(
+            columns={
+                "description": "summary",
+                "url": "link",
+                "publishedAt": "published",
+            }
+        )
 
     # Add missing columns
-    if "author" not in rss.columns:
-        rss["author"] = ""
-    if "collected_at" not in rss.columns:
-        rss["collected_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    if "author" not in api.columns:
-        api["author"] = ""
-    api["collected_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    for df in [rss, api]:
+        if df.empty:
+            continue
+        if "author" not in df.columns:
+            df["author"] = ""
+        if "collected_at" not in df.columns:
+            df["collected_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     # Select standard columns
     cols = ["source", "title", "summary", "link", "published", "author", "collected_at"]
-    rss = rss[[c for c in cols if c in rss.columns]].reindex(columns=cols)
-    api = api[[c for c in cols if c in api.columns]].reindex(columns=cols)
+    if not rss.empty:
+        rss = rss.reindex(columns=cols)
+    if not api.empty:
+        api = api.reindex(columns=cols)
 
     # Merge
-    merged = pd.concat([rss, api], ignore_index=True)
+    frames = [df for df in [rss, api] if not df.empty]
+    if not frames:
+        logger.warning("No articles to merge — both sources are empty.")
+        return
+
+    merged = pd.concat(frames, ignore_index=True)
     merged.drop_duplicates(subset=["title"], inplace=True)
 
-    print(f"Upserting {len(merged)} unique articles into database...")
+    logger.info("Upserting %d unique articles into database...", len(merged))
     save_articles_to_db(merged)
 
-    print("Consolidation Completed successfully!")
+    logger.info("Merge completed successfully!")
+
 
 if __name__ == "__main__":
     main()
