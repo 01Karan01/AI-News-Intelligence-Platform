@@ -2,3 +2,206 @@
   display: grid;
   gap: 10px;
 }
+
+.loadingContainer,
+.errorContainer {
+  display: flex;
+  min-height: 520px;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.loadingContainer {
+  flex-direction: column;
+  gap: 16px;
+  color: var(--text-muted);
+}
+
+.spinner {
+  width: 42px;
+  height: 42px;
+  border: 4px solid rgba(17, 24, 39, 0.12);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.errorState,
+.endpointError,
+.partialFailureAlert {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.errorState {
+  width: min(760px, 100%);
+  padding: 32px;
+  text-align: center;
+}
+
+.errorIcon,
+.alertIcon {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 999px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-weight: 800;
+}
+
+.errorState h1 {
+  margin: 16px 0 10px;
+  color: var(--text);
+  font-size: 2rem;
+}
+
+.errorState p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.errorDetails {
+  margin: 24px 0;
+  border-left: 4px solid #dc2626;
+  border-radius: 8px;
+  background: #f9fafb;
+  padding: 18px;
+  text-align: left;
+}
+
+.errorDetails h2 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+}
+
+.errorDetails ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-muted);
+}
+
+.errorDetails li {
+  margin-bottom: 10px;
+}
+
+.errorDetails li:last-child {
+  margin-bottom: 0;
+}
+
+.errorDetails code {
+  display: inline-block;
+  max-width: 100%;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #fff;
+  color: #b91c1c;
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+
+.partialFailureAlert {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+  margin: 0 auto 16px;
+  width: min(1180px, calc(100% - 32px));
+  padding: 16px;
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.partialFailureAlert strong {
+  color: #78350f;
+}
+
+.partialFailureAlert p {
+  margin: 4px 0 0;
+  color: #92400e;
+}
+
+.endpointError {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 20px;
+  border-left: 4px solid #dc2626;
+  background: #fff7f7;
+}
+
+.endpointError h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.endpointError p {
+  margin: 0 0 10px;
+  color: var(--text-muted);
+}
+
+.endpointError span {
+  display: inline-block;
+  border-radius: 4px;
+  background: #fff;
+  padding: 4px 8px;
+  color: #6b7280;
+  font-family: "Courier New", monospace;
+  font-size: 0.85rem;
+}
+
+.retryButton,
+.secondaryButton {
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.retryButton {
+  padding: 12px 20px;
+}
+
+.secondaryButton {
+  padding: 10px 14px;
+}
+
+.retryButton:hover,
+.secondaryButton:hover {
+  filter: brightness(0.95);
+}
+
+@media (max-width: 720px) {
+  .loadingContainer,
+  .errorContainer {
+    padding: 20px;
+  }
+
+  .errorState {
+    padding: 22px;
+  }
+
+  .errorState h1 {
+    font-size: 1.5rem;
+  }
+
+  .partialFailureAlert {
+    grid-template-columns: auto 1fr;
+  }
+
+  .secondaryButton {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}

@@ -3,6 +3,7 @@ import { FiArrowRight, FiSearch, FiX } from "react-icons/fi";
 import { Link } from "react-router-dom";
 
 import { useSearch } from "../../hooks/useSearch";
+import { cleanDisplayText } from "../../utils/text";
 import styles from "./SearchBar.module.css";
 
 function SearchBar({ variant = "default" }) {
@@ -59,7 +60,7 @@ function SearchBar({ variant = "default" }) {
                 results.slice(0, 5).map((event) => (
                   <Link className={styles.result} key={event.id} to={`/event/${event.id}`}>
                     <span>
-                      <strong>{event.title}</strong>
+                      <strong>{cleanDisplayText(event.title, "Untitled event")}</strong>
                       <small>{event.people.length} people identified</small>
                     </span>
                     <FiArrowRight />

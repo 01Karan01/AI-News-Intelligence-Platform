@@ -1,21 +1,25 @@
 import { FiExternalLink } from "react-icons/fi";
 
+import { cleanDisplayText } from "../../utils/text";
 import styles from "./RelatedArticles.module.css";
 
-function RelatedArticles({ articles }) {
+function RelatedArticles({ articles = [] }) {
+  const items = Array.isArray(articles) ? articles : [];
+  if (items.length === 0) return null;
+
   return (
     <section className={styles.card} aria-labelledby="related-title">
       <div className={styles.header}>
         <h2 id="related-title">Related Articles</h2>
-        <span>{articles.length} sources</span>
+        <span>{items.length} sources</span>
       </div>
       <div className={styles.list}>
-        {articles.map((article) => (
+        {items.map((article) => (
           <article className={styles.article} key={article.id}>
             <div>
-              <h3>{article.headline}</h3>
+              <h3>{cleanDisplayText(article.headline, "Untitled article")}</h3>
               <p>
-                {article.source} •{" "}
+                {cleanDisplayText(article.source, "Unknown source")} {" | "}
                 <time dateTime={article.publishedAt}>
                   {new Intl.DateTimeFormat("en", {
                     month: "short",
@@ -38,3 +42,4 @@ function RelatedArticles({ articles }) {
 }
 
 export default RelatedArticles;
+

@@ -43,11 +43,18 @@ def main():
 
     # Perform Agglomerative Clustering
     print("Running Agglomerative Clustering...")
-    clustering = AgglomerativeClustering(
-        n_clusters=min(30, len(df)),  # Handle cases with fewer than 30 articles
-        metric="precomputed",
-        linkage="average"
-    )
+    try:
+        clustering = AgglomerativeClustering(
+            n_clusters=min(30, len(df)),  # Handle cases with fewer than 30 articles
+            metric="precomputed",
+            linkage="average"
+        )
+    except TypeError:
+        clustering = AgglomerativeClustering(
+            n_clusters=min(30, len(df)),
+            affinity="precomputed",
+            linkage="average"
+        )
     labels = clustering.fit_predict(1 - similarity_matrix)
     df["cluster"] = labels
 

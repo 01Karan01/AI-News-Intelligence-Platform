@@ -1,15 +1,9 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 
 import { useEventContext } from "./useEventContext";
 
 export function useEvents() {
   const { events, loading, error, loadDashboard } = useEventContext();
-
-  useEffect(() => {
-    if (events.length === 0) {
-      loadDashboard();
-    }
-  }, [events.length, loadDashboard]);
 
   const todaysEvents = useMemo(() => {
     const today = new Date().toDateString();
@@ -23,3 +17,4 @@ export function useEvents() {
 
   return { events, todaysEvents, trendingEvents, loading, error, refresh: loadDashboard };
 }
+
