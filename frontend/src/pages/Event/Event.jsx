@@ -12,16 +12,27 @@ function Event() {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let active = true;
 
     async function loadEvent() {
       setLoading(true);
-      const result = await getEventById(id);
-      if (active) {
-        setEvent(result);
-        setLoading(false);
+      setError(null);
+      try {
+        const result = await getEventById(id);
+        if (active) {
+          setEvent(result);
+        }
+      } catch (err) {
+        if (active) {
+          setError(err.message || "Failed to load event intelligence");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
     }
 
@@ -36,11 +47,11 @@ function Event() {
     return <PageLoader label="Loading event intelligence" />;
   }
 
-  if (!event) {
+  if (error || !event) {
     return (
       <ErrorState
         title="Event not found"
-        message="The event cluster you requested is not available in the current intelligence index."
+        message={error || "The event cluster you requested is not available in the current intelligence index."}
       />
     );
   }
@@ -59,3 +70,4 @@ function Event() {
 }
 
 export default Event;
+

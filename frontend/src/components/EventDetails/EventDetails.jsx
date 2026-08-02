@@ -5,6 +5,7 @@ import LocationCard from "../LocationCard/LocationCard";
 import OrganizationCard from "../OrganizationCard/OrganizationCard";
 import PeopleCard from "../PeopleCard/PeopleCard";
 import RelatedArticles from "../RelatedArticles/RelatedArticles";
+import { cleanDisplayText } from "../../utils/text";
 import styles from "./EventDetails.module.css";
 
 function EventDetails({ event }) {
@@ -23,7 +24,7 @@ function EventDetails({ event }) {
       <header className={styles.hero}>
         <div>
           <span className={styles.category}>{event.category}</span>
-          <h1>{event.title}</h1>
+          <h1>{cleanDisplayText(event.title, "Untitled event")}</h1>
           <time dateTime={event.date}>{date}</time>
         </div>
         <div className={styles.confidence} aria-label={`AI confidence score ${event.confidence}%`}>
@@ -39,7 +40,7 @@ function EventDetails({ event }) {
         <div className={styles.summaryCard}>
           <FiActivity />
           <h2>AI Summary</h2>
-          <p>{event.summary}</p>
+          <p>{cleanDisplayText(event.summary, "No summary is available for this event cluster.")}</p>
         </div>
         <div className={styles.impactCard}>
           <FiGlobe />
@@ -51,10 +52,10 @@ function EventDetails({ event }) {
       <section className={styles.eventTimeline} aria-labelledby="event-timeline-title">
         <h2 id="event-timeline-title">Timeline</h2>
         <ol>
-          {event.timeline.map((item) => (
+          {(event.timeline || []).map((item) => (
             <li key={`${item.time}-${item.label}`}>
               <time>{item.time}</time>
-              <span>{item.label}</span>
+              <span>{cleanDisplayText(item.label, "Article published")}</span>
             </li>
           ))}
         </ol>
@@ -68,19 +69,22 @@ function EventDetails({ event }) {
 
       <RelatedArticles articles={event.sources} />
 
-      <section className={styles.sources} aria-labelledby="sources-title">
-        <h2 id="sources-title">Original Source Links</h2>
-        <div>
-          {event.sources.map((source) => (
-            <a href={source.url} key={source.id} target="_blank" rel="noreferrer">
-              <FiLink />
-              {source.source}
-            </a>
-          ))}
-        </div>
-      </section>
+      {(event.sources || []).length > 0 && (
+        <section className={styles.sources} aria-labelledby="sources-title">
+          <h2 id="sources-title">Original Source Links</h2>
+          <div>
+            {(event.sources || []).map((source) => (
+              <a href={source.url} key={source.id} target="_blank" rel="noreferrer">
+                <FiLink />
+                {source.source}
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
     </article>
   );
 }
 
 export default EventDetails;
+

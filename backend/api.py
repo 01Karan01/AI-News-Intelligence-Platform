@@ -1,5 +1,6 @@
 from collections import Counter
 from datetime import datetime, timezone
+from html import unescape
 from pathlib import Path
 import re
 
@@ -17,6 +18,10 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://localhost:4173",
+        "http://127.0.0.1:4173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -50,6 +55,51 @@ def _split_values(value):
     return values
 
 
+def _clean_text(value, fallback=""):
+    if value is None:
+        return fallback
+
+    text = str(value)
+    if not text.strip():
+        return fallback
+
+    # Repair common UTF-8 text that was decoded as Windows-1252.
+    try:
+        repaired = text.encode("latin1").decode("utf-8")
+        if "\uFFFD" not in repaired:
+            text = repaired
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        pass
+
+    text = unescape(text)
+    U = "\uFFFD"
+    text = re.sub(rf"(\w){U}s\b", r"\1's", text)
+    text = re.sub(rf"(\w){U}t\b", r"\1't", text)
+    text = re.sub(rf"(\w){U}re\b", r"\1're", text)
+    text = re.sub(rf"(\w){U}ve\b", r"\1've", text)
+    text = re.sub(rf"(\w){U}ll\b", r"\1'll", text)
+    text = re.sub(rf"(\w){U}d\b", r"\1'd", text)
+    text = re.sub(rf"(\w){U}m\b", r"\1'm", text)
+    text = re.sub(rf"^{U}\s*", '"', text)
+    text = re.sub(rf"\s*{U}$", '"', text)
+    text = re.sub(rf"{U}(.*?){U}", r'"\1"', text)
+    text = re.sub(rf"(\w){U}(\w)", r"\1'\2", text)
+    text = text.replace(U, "")
+    text = re.sub(r"<\s*br\s*/?>", " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"</\s*(p|li|div|h\d)\s*>", ". ", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\bContinue reading\.{0,3}\s*$", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s+", " ", text).strip(" .")
+
+    return text or fallback
+
+
+
+def _clean_title(value, fallback="Untitled event"):
+    title = _clean_text(value, fallback=fallback)
+    title = re.sub(r"\s*[-|]\s*(BBC|CNN|Reuters|AP|NPR|The Guardian)\s*$", "", title, flags=re.IGNORECASE)
+    return title[:140].strip() or fallback
+
 def _parse_date(value):
     parsed = pd.to_datetime(value, errors="coerce", utc=True)
     if pd.isna(parsed):
@@ -64,15 +114,25 @@ def _event_title(cluster_id, titles_df, cluster_df):
         title_row = pd.DataFrame()
 
     if not title_row.empty:
-        title = str(title_row.iloc[0].get("title", "")).strip()
-        if title:
+        title = _clean_title(title_row.iloc[0].get("title", ""))
+        if title and len(title.split()) >= 3:
             return title
 
         keywords = str(title_row.iloc[0].get("keywords", "")).strip()
         if keywords:
-            return keywords.split(",")[0].strip().title()
+            keyword_title = _clean_title(keywords.split(",")[0].strip().title())
+            if len(keyword_title.split()) >= 3:
+                return keyword_title
 
-    return str(cluster_df.iloc[0].get("title", f"Event Cluster {cluster_id}"))
+    headlines = [
+        _clean_title(value)
+        for value in cluster_df["title"].head(8).tolist()
+        if _clean_title(value)
+    ]
+    if headlines:
+        return max(headlines, key=lambda item: min(len(item), 90))
+
+    return f"Event Cluster {cluster_id}"
 
 
 def _category_for(text):
@@ -125,8 +185,8 @@ def _source_articles(cluster_df):
         articles.append(
             {
                 "id": f"article-{row.get('cluster', 'x')}-{index}",
-                "headline": row.get("title", "Untitled article"),
-                "source": row.get("source", "Unknown source"),
+                "headline": _clean_title(row.get("title", ""), "Untitled article"),
+                "source": _clean_text(row.get("source", ""), "Unknown source"),
                 "publishedAt": published.isoformat(),
                 "url": row.get("link", ""),
             }
@@ -145,7 +205,7 @@ def _event_timeline(cluster_df):
         items.append(
             {
                 "time": published.strftime("%H:%M"),
-                "label": row.get("title", "Article published"),
+                "label": _clean_title(row.get("title", ""), "Article published"),
             }
         )
     return items
@@ -181,7 +241,11 @@ def _load_events():
 
         title = _event_title(cluster_id, titles_df, cluster_df)
         top_row = cluster_df.iloc[0]
-        summaries = [str(value).strip() for value in cluster_df["summary"].tolist() if str(value).strip()]
+        summaries = [
+            _clean_text(value)
+            for value in cluster_df["summary"].tolist()
+            if _clean_text(value)
+        ]
         summary = summaries[0] if summaries else "No summary is available for this event cluster."
         article_count = len(cluster_df)
         source_count = cluster_df["source"].nunique() if "source" in cluster_df.columns else 0

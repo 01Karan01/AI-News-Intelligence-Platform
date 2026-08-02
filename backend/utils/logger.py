@@ -19,6 +19,8 @@ if not logger.handlers:
     logger.addHandler(file_handler)
 
     # Console handler — real-time feedback
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="replace")
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
     logger.addHandler(console_handler)

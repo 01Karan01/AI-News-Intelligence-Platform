@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 from datetime import datetime
+from html import unescape
+import re
 
 import pandas as pd
 
@@ -12,6 +14,29 @@ if str(PROJECT_ROOT) not in sys.path:
 from backend.utils.csv_utils import read_csv_safely
 from backend.utils.db import init_db, save_articles_to_db
 from backend.utils.logger import logger
+
+
+def clean_text(value):
+    if value is None:
+        return ""
+
+    text = str(value)
+    if not text.strip():
+        return ""
+
+    try:
+        repaired = text.encode("latin1").decode("utf-8")
+        if "�" not in repaired:
+            text = repaired
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        pass
+
+    text = unescape(text)
+    text = re.sub(r"<\s*br\s*/?>", " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"</\s*(p|li|div|h\d)\s*>", ". ", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\bContinue reading\.{0,3}\s*$", "", text, flags=re.IGNORECASE)
+    return re.sub(r"\s+", " ", text).strip(" .")
 
 
 def main(rss_df=None, api_df=None):
@@ -81,6 +106,9 @@ def main(rss_df=None, api_df=None):
         return
 
     merged = pd.concat(frames, ignore_index=True)
+    for column in ["source", "title", "summary", "author"]:
+        if column in merged.columns:
+            merged[column] = merged[column].apply(clean_text)
     merged.drop_duplicates(subset=["title"], inplace=True)
 
     logger.info("Upserting %d unique articles into database...", len(merged))

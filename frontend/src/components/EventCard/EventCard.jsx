@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { FiArrowRight, FiFileText, FiUsers, FiZap } from "react-icons/fi";
 import { Link } from "react-router-dom";
 
+import { cleanDisplayText } from "../../utils/text";
 import styles from "./EventCard.module.css";
 
 function EventCard({ event, compact = false }) {
@@ -25,8 +26,8 @@ function EventCard({ event, compact = false }) {
         <span>{event.category}</span>
         <time dateTime={event.date}>{date}</time>
       </div>
-      <h3>{event.title}</h3>
-      <p>{event.summary}</p>
+      <h3>{cleanDisplayText(event.title, "Untitled event")}</h3>
+      <p>{cleanDisplayText(event.summary, "No summary is available for this event cluster.")}</p>
       <div className={styles.meta} aria-label="Event metrics">
         <span>
           <FiFileText /> {event.articleCount} articles
